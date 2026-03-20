@@ -1,0 +1,49 @@
+{
+  "name": "ai-orchestration-playbook",
+  "version": "1.0.0",
+  "description": "A reference implementation of production AI orchestration patterns — schema-guided generation, multi-provider LLM abstraction, agent loops with tool calling, and multi-layer output validation",
+  "type": "module",
+  "main": "dist/index.js",
+  "types": "dist/index.d.ts",
+  "scripts": {
+    "build": "tsc",
+    "dev": "tsx watch src/examples/demo.ts",
+    "demo": "tsx src/examples/demo.ts",
+    "test": "vitest run",
+    "test:watch": "vitest",
+    "test:coverage": "vitest run --coverage",
+    "lint": "eslint src --ext .ts",
+    "typecheck": "tsc --noEmit"
+  },
+  "keywords": [
+    "ai",
+    "llm",
+    "orchestration",
+    "schema-guided-generation",
+    "tool-calling",
+    "composable-architecture",
+    "prompt-engineering",
+    "streaming-inference",
+    "model-agnostic",
+    "guardrails",
+    "production-ai"
+  ],
+  "author": "Ankita Dodamani",
+  "license": "MIT",
+  "dependencies": {
+    "zod": "^3.23.8",
+    "eventemitter3": "^5.0.1"
+  },
+  "devDependencies": {
+    "@types/node": "^22.0.0",
+    "typescript": "^5.6.0",
+    "tsx": "^4.19.0",
+    "vitest": "^2.1.0",
+    "eslint": "^9.0.0",
+    "@typescript-eslint/eslint-plugin": "^8.0.0",
+    "@typescript-eslint/parser": "^8.0.0"
+  },
+  "engines": {
+    "node": ">=20.0.0"
+  }
+}
