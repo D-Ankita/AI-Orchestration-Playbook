@@ -1,0 +1,464 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>AI Orchestration Playbook — Architecture</title>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/mermaid/10.9.1/mermaid.min.js"></script>
+  <style>
+    :root {
+      --bg: #0a0a0a;
+      --surface: #141414;
+      --surface-hover: #1c1c1c;
+      --border: #262626;
+      --text: #e5e5e5;
+      --text-muted: #a3a3a3;
+      --accent: #2563eb;
+      --accent-soft: #1e3a5f;
+      --green: #22c55e;
+      --red: #ef4444;
+      --yellow: #eab308;
+      --purple: #7c3aed;
+      --font: 'Inter', -apple-system, system-ui, sans-serif;
+      --mono: 'JetBrains Mono', 'Fira Code', monospace;
+    }
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body { font-family: var(--font); background: var(--bg); color: var(--text); line-height: 1.6; }
+
+    /* Header */
+    .header {
+      text-align: center;
+      padding: 80px 20px 60px;
+      border-bottom: 1px solid var(--border);
+    }
+    .header h1 { font-size: 2.5rem; font-weight: 800; letter-spacing: -0.03em; margin-bottom: 12px; }
+    .header h1 span { color: var(--accent); }
+    .header p { color: var(--text-muted); font-size: 1.1rem; max-width: 600px; margin: 0 auto; }
+    .header .author {
+      display: inline-block;
+      margin-top: 20px;
+      padding: 6px 16px;
+      border-radius: 20px;
+      background: var(--surface);
+      border: 1px solid var(--border);
+      color: var(--text-muted);
+      font-size: 0.85rem;
+    }
+
+    /* Layout */
+    .container { max-width: 900px; margin: 0 auto; padding: 0 24px; }
+    section { padding: 60px 0; border-bottom: 1px solid var(--border); }
+    section:last-child { border-bottom: none; }
+    h2 {
+      font-size: 1.5rem;
+      font-weight: 700;
+      margin-bottom: 8px;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+    h2 .num {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      width: 32px;
+      height: 32px;
+      border-radius: 8px;
+      background: var(--accent-soft);
+      color: var(--accent);
+      font-size: 0.85rem;
+      font-weight: 700;
+    }
+    .subtitle { color: var(--text-muted); margin-bottom: 28px; font-size: 0.95rem; }
+
+    /* Pipeline flow */
+    .pipeline {
+      display: flex;
+      gap: 0;
+      align-items: stretch;
+      overflow-x: auto;
+      padding: 20px 0;
+    }
+    .stage {
+      flex: 1;
+      min-width: 140px;
+      padding: 20px 16px;
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      position: relative;
+      transition: border-color 0.2s, background 0.2s;
+    }
+    .stage:hover { border-color: var(--accent); background: var(--surface-hover); }
+    .stage h3 { font-size: 0.85rem; font-weight: 700; margin-bottom: 6px; }
+    .stage p { font-size: 0.78rem; color: var(--text-muted); line-height: 1.4; }
+    .stage .icon { font-size: 1.3rem; margin-bottom: 8px; display: block; }
+    .arrow {
+      display: flex;
+      align-items: center;
+      padding: 0 4px;
+      color: var(--text-muted);
+      font-size: 1.2rem;
+      flex-shrink: 0;
+    }
+
+    /* Code blocks */
+    .code-block {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      padding: 20px;
+      overflow-x: auto;
+      margin: 16px 0;
+      font-family: var(--mono);
+      font-size: 0.82rem;
+      line-height: 1.7;
+      color: var(--text-muted);
+    }
+    .code-block .kw { color: var(--purple); }
+    .code-block .str { color: var(--green); }
+    .code-block .comment { color: #525252; font-style: italic; }
+    .code-block .fn { color: #60a5fa; }
+    .code-block .type { color: var(--yellow); }
+
+    /* Validation layers */
+    .layers { display: flex; flex-direction: column; gap: 8px; }
+    .layer {
+      display: flex;
+      align-items: center;
+      gap: 14px;
+      padding: 14px 18px;
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      transition: border-color 0.2s;
+    }
+    .layer:hover { border-color: var(--accent); }
+    .layer .badge {
+      font-size: 0.7rem;
+      font-weight: 700;
+      padding: 3px 10px;
+      border-radius: 6px;
+      white-space: nowrap;
+      letter-spacing: 0.03em;
+    }
+    .layer .badge.blue { background: #1e3a5f; color: #60a5fa; }
+    .layer .badge.green { background: #14532d; color: #4ade80; }
+    .layer .badge.red { background: #450a0a; color: #f87171; }
+    .layer .badge.yellow { background: #422006; color: #fbbf24; }
+    .layer .desc { flex: 1; }
+    .layer .desc strong { font-size: 0.85rem; display: block; }
+    .layer .desc span { font-size: 0.78rem; color: var(--text-muted); }
+    .layer .example {
+      font-family: var(--mono);
+      font-size: 0.72rem;
+      color: var(--red);
+      background: #1c1010;
+      padding: 3px 8px;
+      border-radius: 4px;
+    }
+
+    /* Mermaid diagrams */
+    .mermaid-container {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      padding: 24px;
+      margin: 16px 0;
+      overflow-x: auto;
+    }
+    .mermaid { display: flex; justify-content: center; }
+
+    /* Stats */
+    .stats {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
+      gap: 12px;
+      margin-top: 16px;
+    }
+    .stat {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      padding: 16px;
+      text-align: center;
+    }
+    .stat .value { font-size: 1.8rem; font-weight: 800; color: var(--accent); }
+    .stat .label { font-size: 0.78rem; color: var(--text-muted); margin-top: 4px; }
+
+    /* Footer */
+    .footer {
+      text-align: center;
+      padding: 40px 20px;
+      color: var(--text-muted);
+      font-size: 0.85rem;
+    }
+    .footer a { color: var(--accent); text-decoration: none; }
+
+    /* Responsive */
+    @media (max-width: 640px) {
+      .header h1 { font-size: 1.8rem; }
+      .pipeline { flex-direction: column; }
+      .arrow { transform: rotate(90deg); justify-content: center; }
+    }
+  </style>
+</head>
+<body>
+
+<div class="header">
+  <h1>AI Orchestration <span>Playbook</span></h1>
+  <p>Production-grade patterns for building AI systems that generate structured, validated UI compositions — not freeform text.</p>
+  <div class="author">Built by Ankita Dodamani</div>
+</div>
+
+<div class="container">
+
+  <!-- PIPELINE OVERVIEW -->
+  <section>
+    <h2><span class="num">1</span> How It Works</h2>
+    <p class="subtitle">User says "add a pricing section with 3 cards." Here's what happens:</p>
+
+    <div class="pipeline">
+      <div class="stage">
+        <span class="icon">🛡</span>
+        <h3>Input Guard</h3>
+        <p>Check for prompt injection, content policy violations</p>
+      </div>
+      <div class="arrow">→</div>
+      <div class="stage">
+        <span class="icon">📋</span>
+        <h3>Context Build</h3>
+        <p>Schemas + tokens + current tree → system prompt</p>
+      </div>
+      <div class="arrow">→</div>
+      <div class="stage">
+        <span class="icon">🤖</span>
+        <h3>Agent Loop</h3>
+        <p>LLM calls tools, inspects state, generates changes</p>
+      </div>
+      <div class="arrow">→</div>
+      <div class="stage">
+        <span class="icon">✓</span>
+        <h3>Validate</h3>
+        <p>4 layers: schema, structural, safety, checksum</p>
+      </div>
+      <div class="arrow">→</div>
+      <div class="stage">
+        <span class="icon">🌳</span>
+        <h3>Apply</h3>
+        <p>Ordered changes on immutable tree</p>
+      </div>
+    </div>
+  </section>
+
+  <!-- SCHEMA-GUIDED GENERATION -->
+  <section>
+    <h2><span class="num">2</span> Schema-Guided Generation</h2>
+    <p class="subtitle">The AI can only use components you've registered. No hallucinated types, no invented props.</p>
+
+    <div class="code-block">
+      <span class="comment">// Register what the AI is allowed to generate</span><br>
+      registry.<span class="fn">register</span>({<br>
+      &nbsp;&nbsp;type: <span class="str">'Card'</span>,<br>
+      &nbsp;&nbsp;props: {<br>
+      &nbsp;&nbsp;&nbsp;&nbsp;title: { type: <span class="str">'string'</span>, required: <span class="kw">true</span> },<br>
+      &nbsp;&nbsp;&nbsp;&nbsp;variant: { type: <span class="str">'enum'</span>, enum: [<span class="str">'default'</span>, <span class="str">'elevated'</span>] },<br>
+      &nbsp;&nbsp;},<br>
+      &nbsp;&nbsp;slots: {<br>
+      &nbsp;&nbsp;&nbsp;&nbsp;footer: { allowedTypes: [<span class="str">'Button'</span>], maxChildren: <span class="type">3</span> }<br>
+      &nbsp;&nbsp;}<br>
+      });<br><br>
+      <span class="comment">// AI tries to generate &lt;MagicWidget&gt; → rejected</span><br>
+      <span class="comment">// AI generates &lt;Card title="Pricing"&gt; → accepted</span>
+    </div>
+  </section>
+
+  <!-- PROVIDER ABSTRACTION -->
+  <section>
+    <h2><span class="num">3</span> Model-Agnostic Providers</h2>
+    <p class="subtitle">Switch between Claude, GPT-4, or Gemini with zero code changes. Automatic fallback if one goes down.</p>
+
+    <div class="mermaid-container">
+      <div class="mermaid">
+        graph LR
+          R["Request"] --> P1["Anthropic Claude"]
+          P1 -->|"unavailable"| P2["OpenAI GPT-4"]
+          P2 -->|"unavailable"| P3["Google Gemini"]
+          P1 -->|"available"| T["Transform to<br/>provider format"]
+          P2 -->|"available"| T
+          P3 -->|"available"| T
+          T --> LLM["LLM Call"]
+
+          style R fill:#1e1e2e,stroke:#7c3aed,color:#e5e5e5
+          style P1 fill:#1e1e2e,stroke:#2563eb,color:#e5e5e5
+          style P2 fill:#1e1e2e,stroke:#22c55e,color:#e5e5e5
+          style P3 fill:#1e1e2e,stroke:#eab308,color:#e5e5e5
+          style T fill:#1e1e2e,stroke:#525252,color:#a3a3a3
+          style LLM fill:#1e1e2e,stroke:#7c3aed,color:#e5e5e5
+      </div>
+    </div>
+
+    <div class="code-block">
+      <span class="kw">const</span> factory = <span class="kw">new</span> <span class="type">ProviderFactory</span>();<br>
+      factory.<span class="fn">register</span>(<span class="kw">new</span> <span class="type">AnthropicProvider</span>(creds));<br>
+      factory.<span class="fn">register</span>(<span class="kw">new</span> <span class="type">OpenAIProvider</span>(creds));<br><br>
+      <span class="comment">// Anthropic down? OpenAI takes over. No code change.</span><br>
+      <span class="kw">const</span> provider = factory.<span class="fn">getAvailable</span>([<span class="str">'anthropic'</span>, <span class="str">'openai'</span>]);
+    </div>
+  </section>
+
+  <!-- AGENT LOOP -->
+  <section>
+    <h2><span class="num">4</span> Agentic Loop with Tool Calling</h2>
+    <p class="subtitle">Complex tasks need multiple LLM turns. The agent inspects state, looks up schemas, and validates work before responding.</p>
+
+    <div class="mermaid-container">
+      <div class="mermaid">
+        sequenceDiagram
+          participant U as User
+          participant O as Orchestrator
+          participant AI as LLM
+          participant T as Tools
+
+          U->>O: "Add pricing cards"
+          O->>AI: prompt + schema context
+          AI->>T: inspect_tree({rootUid: "page"})
+          T-->>AI: {nodeCount: 3, tree: ...}
+          AI->>T: lookup_schema("Card")
+          T-->>AI: {props: [title, body, variant]}
+          AI-->>O: 4 changes (1 Grid + 3 Cards)
+          O-->>U: validated result
+      </div>
+    </div>
+  </section>
+
+  <!-- TOOL CALLING -->
+  <section>
+    <h2><span class="num">5</span> Zod-Validated Tools</h2>
+    <p class="subtitle">Every tool validates input AND output with Zod at runtime. Built-in timeout, retry with backoff, and abort.</p>
+
+    <div class="code-block">
+      <span class="kw">const</span> tool = <span class="fn">defineTool</span>({<br>
+      &nbsp;&nbsp;name: <span class="str">'fetch_cms_data'</span>,<br>
+      &nbsp;&nbsp;inputSchema: z.<span class="fn">object</span>({<br>
+      &nbsp;&nbsp;&nbsp;&nbsp;contentType: z.<span class="fn">string</span>(),<br>
+      &nbsp;&nbsp;&nbsp;&nbsp;limit: z.<span class="fn">number</span>().<span class="fn">default</span>(<span class="type">10</span>),<br>
+      &nbsp;&nbsp;}),<br>
+      &nbsp;&nbsp;outputSchema: z.<span class="fn">object</span>({<br>
+      &nbsp;&nbsp;&nbsp;&nbsp;entries: z.<span class="fn">array</span>(z.<span class="fn">record</span>(z.<span class="fn">unknown</span>())),<br>
+      &nbsp;&nbsp;}),<br>
+      &nbsp;&nbsp;timeout: <span class="type">10_000</span>,<br>
+      &nbsp;&nbsp;retryPolicy: { maxRetries: <span class="type">2</span>, backoffMs: <span class="type">1000</span> },<br>
+      });<br><br>
+      <span class="comment">// AI sends {contentType: 42} → Zod rejects at boundary</span><br>
+      <span class="comment">// Tool returns {invalid: true} → Zod rejects output</span><br>
+      <span class="comment">// Tool hangs → times out after 10s → retries twice</span>
+    </div>
+  </section>
+
+  <!-- VALIDATION LAYERS -->
+  <section>
+    <h2><span class="num">6</span> 4-Layer Validation</h2>
+    <p class="subtitle">AI output passes through four independent safety layers before touching the application.</p>
+
+    <div class="layers">
+      <div class="layer">
+        <span class="badge blue">LAYER 1</span>
+        <div class="desc">
+          <strong>Schema Conformance</strong>
+          <span>Valid component types? Props exist? Slots defined?</span>
+        </div>
+        <span class="example">&lt;MagicWidget&gt; → rejected</span>
+      </div>
+      <div class="layer">
+        <span class="badge green">LAYER 2</span>
+        <div class="desc">
+          <strong>Structural Integrity</strong>
+          <span>Unique UIDs? Parents exist? No circular refs?</span>
+        </div>
+        <span class="example">duplicate uid → rejected</span>
+      </div>
+      <div class="layer">
+        <span class="badge red">LAYER 3</span>
+        <div class="desc">
+          <strong>Safety Guardrails</strong>
+          <span>No scripts, event handlers, iframes, external resources</span>
+        </div>
+        <span class="example">&lt;script&gt; → blocked</span>
+      </div>
+      <div class="layer">
+        <span class="badge yellow">LAYER 4</span>
+        <div class="desc">
+          <strong>Checksum Verification</strong>
+          <span>SHA-256 checksum confirms state hasn't drifted since generation started</span>
+        </div>
+        <span class="example">stale edit → warned</span>
+      </div>
+    </div>
+  </section>
+
+  <!-- STREAMING -->
+  <section>
+    <h2><span class="num">7</span> Streaming with Backpressure</h2>
+    <p class="subtitle">Real-time feedback as the AI generates. Typed events, buffer management, abort support.</p>
+
+    <div class="code-block">
+      <span class="comment">// 7 typed event types flow through the stream:</span><br><br>
+      <span class="type">text</span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;→ incremental AI response text<br>
+      <span class="type">thinking</span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;→ model reasoning (when enabled)<br>
+      <span class="type">tool_start</span>&nbsp;&nbsp;&nbsp;→ AI wants to call a tool<br>
+      <span class="type">tool_result</span>&nbsp;&nbsp;→ tool execution completed<br>
+      <span class="type">change</span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;→ a validated NodeChange to apply<br>
+      <span class="type">done</span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;→ generation complete + token usage<br>
+      <span class="type">error</span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;→ recoverable or fatal error<br><br>
+      <span class="comment">// Backpressure: if buffer > 1MB, stream pauses</span><br>
+      <span class="comment">// Abort: AbortController cancels mid-generation</span>
+    </div>
+  </section>
+
+  <!-- STATS -->
+  <section>
+    <h2><span class="num">⚡</span> Project Stats</h2>
+    <div class="stats">
+      <div class="stat"><div class="value">~5k</div><div class="label">Lines of TypeScript</div></div>
+      <div class="stat"><div class="value">33</div><div class="label">Tests Passing</div></div>
+      <div class="stat"><div class="value">7</div><div class="label">ADRs Documented</div></div>
+      <div class="stat"><div class="value">6</div><div class="label">Subsystems</div></div>
+      <div class="stat"><div class="value">2</div><div class="label">Runtime Dependencies</div></div>
+      <div class="stat"><div class="value">4</div><div class="label">Mermaid Diagrams</div></div>
+    </div>
+  </section>
+
+</div>
+
+<div class="footer">
+  <p>Ankita Dodamani · <a href="https://github.com/D-Ankita" target="_blank">github.com/D-Ankita</a> · <a href="https://linkedin.com/in/dodamaniankita" target="_blank">LinkedIn</a></p>
+</div>
+
+<script>
+  mermaid.initialize({
+    startOnLoad: true,
+    theme: 'dark',
+    themeVariables: {
+      primaryColor: '#1e1e2e',
+      primaryTextColor: '#e5e5e5',
+      primaryBorderColor: '#2563eb',
+      lineColor: '#525252',
+      secondaryColor: '#141414',
+      tertiaryColor: '#141414',
+      fontSize: '13px',
+    },
+    sequence: {
+      actorFontSize: 13,
+      messageFontSize: 12,
+      actorBorderColor: '#2563eb',
+      actorBkg: '#1e1e2e',
+      actorTextColor: '#e5e5e5',
+      signalColor: '#a3a3a3',
+      signalTextColor: '#e5e5e5',
+    },
+  });
+</script>
+
+</body>
+</html>

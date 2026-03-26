@@ -1,0 +1,32 @@
+flowchart LR
+    subgraph Factory["Provider Factory"]
+        direction TB
+        C[complete request]
+    end
+
+    subgraph Priority["Fallback Chain"]
+        direction TB
+        P1[Anthropic Claude<br/>Priority 1]
+        P2[OpenAI GPT-4o<br/>Priority 2]
+        P3[Google Gemini<br/>Priority 3]
+    end
+
+    subgraph Transform["Message Transform"]
+        direction TB
+        NF[Normalized Format<br/>internal messages]
+        AF[Anthropic Format<br/>system field + content blocks]
+        OF[OpenAI Format<br/>role/content messages]
+    end
+
+    C --> P1
+    P1 -->|unavailable| P2
+    P2 -->|unavailable| P3
+    P1 -->|available| NF
+    P2 -->|available| NF
+    P3 -->|available| NF
+    NF --> AF
+    NF --> OF
+
+    style Factory fill:#ede9fe,stroke:#7c3aed
+    style Priority fill:#fef3c7,stroke:#f59e0b
+    style Transform fill:#e8f4fd,stroke:#2563eb

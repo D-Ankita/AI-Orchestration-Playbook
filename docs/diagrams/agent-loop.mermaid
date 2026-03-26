@@ -1,0 +1,37 @@
+sequenceDiagram
+    participant U as User
+    participant P as Pipeline
+    participant G as Guardrails
+    participant O as Orchestrator
+    participant AI as LLM (Claude/GPT)
+    participant T as Tool Registry
+    participant V as Validator
+
+    U->>P: generate("Add a pricing section<br/>with 3 plan cards")
+    P->>G: validateInput(prompt)
+    G-->>P: allowed: true, risk: none
+
+    P->>O: generate(request)
+    Note over O: Build system prompt<br/>with schema context
+
+    O->>AI: messages + tools
+    AI-->>O: tool_call: inspect_tree({})
+    O->>T: execute("inspect_tree", {})
+    T-->>O: {tree: ..., nodeCount: 5}
+    O->>AI: tool result
+
+    AI-->>O: tool_call: lookup_schema("Card")
+    O->>T: execute("lookup_schema", {type: "Card"})
+    T-->>O: {found: true, schema: ...}
+    O->>AI: tool result
+
+    AI-->>O: JSON response with 4 changes<br/>(1 Grid + 3 Cards)
+
+    O-->>P: GenerationResult
+
+    P->>V: validateChanges(changes, schema)
+    Note over V: Layer 1: Schema ✓<br/>Layer 2: Structure ✓<br/>Layer 3: Safety ✓<br/>Layer 4: Checksum ✓
+    V-->>P: valid: true
+
+    P->>P: applyChanges(tree, changes)
+    P-->>U: updated tree + explanation

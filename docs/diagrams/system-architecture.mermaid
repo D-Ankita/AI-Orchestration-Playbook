@@ -1,0 +1,52 @@
+graph TB
+    subgraph Input["User Input"]
+        UP[User Prompt<br/>"Add a hero with 3 feature cards"]
+    end
+
+    subgraph Guardrails["Input Guardrails"]
+        PI[Prompt Injection<br/>Detection]
+        CP[Content Policy<br/>Check]
+    end
+
+    subgraph Context["Context Assembly"]
+        SR[Schema Registry<br/>7 component types]
+        DT[Design Tokens<br/>colors, spacing, type]
+        CT[Current Tree State]
+        PB[Prompt Builder<br/>system + user message]
+    end
+
+    subgraph Orchestrator["Orchestrator — Agent Loop"]
+        LLM[LLM Provider<br/>Anthropic / OpenAI / Google]
+        TC[Tool Calls?]
+        TE[Tool Execution<br/>Zod-validated I/O]
+        TR[Tool Results]
+    end
+
+    subgraph Validation["Output Validation — 4 Layers"]
+        L1[Schema Conformance<br/>valid types & props?]
+        L2[Structural Integrity<br/>no duplicate UIDs?]
+        L3[Safety Guardrails<br/>no script injection?]
+        L4[Checksum Verification<br/>state still fresh?]
+    end
+
+    subgraph Output["Result"]
+        NC[NodeChange Array<br/>ordered: REMOVE → MODIFY → ADD]
+        AT[Apply to Tree<br/>immutable transformation]
+    end
+
+    UP --> PI --> CP --> PB
+    SR --> PB
+    DT --> PB
+    CT --> PB
+    PB --> LLM
+    LLM --> TC
+    TC -->|yes| TE --> TR --> LLM
+    TC -->|no| L1 --> L2 --> L3 --> L4
+    L4 --> NC --> AT
+
+    style Input fill:#e8f4fd,stroke:#2563eb
+    style Guardrails fill:#fef3c7,stroke:#f59e0b
+    style Context fill:#f0fdf4,stroke:#22c55e
+    style Orchestrator fill:#ede9fe,stroke:#7c3aed
+    style Validation fill:#fff1f2,stroke:#ef4444
+    style Output fill:#f0fdf4,stroke:#22c55e

@@ -1,0 +1,45 @@
+flowchart TB
+    AI[AI Generated Output] --> L1
+
+    subgraph L1["Layer 1: Schema Conformance"]
+        S1{Component type<br/>exists in registry?}
+        S2{Props match<br/>schema definition?}
+        S3{Slots use<br/>defined names?}
+    end
+
+    L1 --> L2
+
+    subgraph L2["Layer 2: Structural Integrity"]
+        T1{All nodes have<br/>unique UIDs?}
+        T2{Parent UIDs<br/>exist in tree?}
+        T3{No circular<br/>references?}
+    end
+
+    L2 --> L3
+
+    subgraph L3["Layer 3: Safety Guardrails"]
+        G1{No script tags<br/>or event handlers?}
+        G2{No external<br/>resource refs?}
+        G3{Nesting depth<br/>within limit?}
+    end
+
+    L3 --> L4
+
+    subgraph L4["Layer 4: Checksum Verification"]
+        C1{Target node checksum<br/>matches expected?}
+        C2{State hasn't drifted<br/>since generation?}
+    end
+
+    L4 --> OUT[Valid Output<br/>Ready to Apply]
+
+    S1 -->|no| ERR[Rejected<br/>with error details]
+    G1 -->|no| ERR
+    C1 -->|no| WARN[Warning:<br/>stale changes]
+
+    style L1 fill:#e8f4fd,stroke:#2563eb
+    style L2 fill:#f0fdf4,stroke:#22c55e
+    style L3 fill:#fff1f2,stroke:#ef4444
+    style L4 fill:#fef3c7,stroke:#f59e0b
+    style ERR fill:#fee2e2,stroke:#ef4444
+    style WARN fill:#fef9c3,stroke:#eab308
+    style OUT fill:#dcfce7,stroke:#22c55e
